@@ -29,5 +29,5 @@ jobs:
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: '🚀 deploy start\n## 작업 사항\n\n' + github.event.pull_request.title
+              body: '🚀 deploy start\n## 작업 사항\n\n' + ${{ github.event.pull_request.title }}
             });
