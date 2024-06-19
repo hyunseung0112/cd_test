@@ -6,6 +6,7 @@ on:
 
 jobs:
   run-cd-workflows:
+    permissions: write-all
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request }}
     steps:
