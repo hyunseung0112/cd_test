@@ -1,13 +1,8 @@
 name: CD Trigger
 
-#on:
-#    issue_comment:
-#        types: [created, edited]
-
 on:
-  push:
-    branches:
-      -
+    issue_comment:
+        types: [created, edited]
 
 jobs:
   run-cd-workflows:
