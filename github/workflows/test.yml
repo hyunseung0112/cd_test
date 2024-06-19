@@ -1,0 +1,39 @@
+name: CD Trigger
+
+#on:
+#    issue_comment:
+#        types: [created, edited]
+
+on:
+  push:
+    branches:
+      -
+
+jobs:
+  run-cd-workflows:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+#      - name: Deploy to FirebaseDistribution
+#        if: contains(github.event.comment.body, '/deploy')
+#        run: |
+#          echo "Triggering debug and release deployments..."
+#          gh workflow run deploy-debug.yml
+#          gh workflow run deploy-release.yml
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add deploy comment to PR
+        env:
+          BODY: ${{ github.event.pull_request.body }}
+        if: contains(github.event.comment.body, '/deploy')
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: '🚀 deploy start\n작업 사항\n\n${context.payload.pull_request.body}'
+            });
