@@ -23,12 +23,12 @@ jobs:
       - name: Add deploy comment to PR
         if: contains(github.event.comment.body, '/deploy')
         run: echo The Title of your PR is ${{ github.event.pull_request.title }}
-        uses: actions/github-script@v6
-        with:
-          script: |
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: '🚀 deploy start\n## 작업 사항\n\n'
-            });
+#        uses: actions/github-script@v6
+#        with:
+#          script: |
+#            github.rest.issues.createComment({
+#              issue_number: context.issue.number,
+#              owner: context.repo.owner,
+#              repo: context.repo.repo,
+#              body: '🚀 deploy start\n## 작업 사항\n\n'
+#            });
