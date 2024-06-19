@@ -20,6 +20,9 @@ jobs:
 #          gh workflow run deploy-release.yml
 #        env:
 #          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: check workspace
+        run: echo ${{ github.workspace }}
+
       - name: Add deploy comment to PR
         if: contains(github.event.comment.body, '/deploy')
         run: echo The Title of your PR is ${{ github.event.pull_request.title }}
