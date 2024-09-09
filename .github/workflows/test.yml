@@ -2,36 +2,43 @@ name: CD Trigger
 
 on:
     issue_comment:
-        types: [created, edited]
+        types: [ created, edited ]
 
 jobs:
-  run-cd-workflows:
-    permissions: write-all
-    runs-on: ubuntu-latest
-    if: ${{ github.event.issue.pull_request }}
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v2
-#      - name: Deploy to FirebaseDistribution
-#        if: contains(github.event.comment.body, '/deploy')
-#        run: |
-#          echo "Triggering debug and release deployments..."
-#          gh workflow run deploy-debug.yml
-#          gh workflow run deploy-release.yml
-#        env:
-#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: check workspace
-        run: echo ${{ github.workspace }}
+    run-cd-workflows:
+        runs-on: ubuntu-latest
+        if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '/deploy') }}
+        steps:
+            -   name: Checkout Repository
+                uses: actions/checkout@v2
 
-      - name: Add deploy comment to PR
-        if: contains(github.event.comment.body, '/deploy')
-        run: echo The Title of your PR is ${{ github.event.pull_request.title }}
-#        uses: actions/github-script@v6
-#        with:
-#          script: |
-#            github.rest.issues.createComment({
-#              issue_number: context.issue.number,
-#              owner: context.repo.owner,
-#              repo: context.repo.repo,
-#              body: '🚀 deploy start\n## 작업 사항\n\n'
-#            });
+            -   name: Get PR branch name
+                id: get_branch
+                run: |
+                    PR_NUMBER=${{ github.event.issue.number }}
+                    PR_INFO=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                      "https://api.github.com/repos/${{ github.repository }}/pulls/$PR_NUMBER")
+                    BRANCH=$(echo "$PR_INFO" | jq -r '.head.ref')
+                    echo "Trigger Branch Name : $BRANCH"
+                    echo "BRANCH_NAME=$BRANCH" >> $GITHUB_ENV
+
+            -   name: Deploy to FirebaseDistribution
+                run: |
+                    echo "Triggering debug and release deployments..."
+                    gh workflow run deploy-debug.yml --ref ${{ env.BRANCH_NAME }} -f release_notes="${{ github.event.issue.body }}"
+                    gh workflow run deploy-release.yml --ref ${{ env.BRANCH_NAME }} -f release_notes="${{ github.event.issue.body }}"
+                env:
+                    GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+            -   name: Add deploy comment to PR
+                env:
+                    BODY: ${{ github.event.pull_request.body }}
+                uses: actions/github-script@v6
+                with:
+                    script: |
+                        github.rest.issues.createComment({
+                          issue_number: context.issue.number,
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          body: '🚀 deploy start'
+                        });
