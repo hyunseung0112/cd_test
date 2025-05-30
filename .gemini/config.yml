@@ -1,0 +1,52 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+title: FanmaumGeminiConfig
+type: object
+properties:
+    have_fun:
+        type: boolean
+        description: PR 생성시 최초로 한번 시와 같은 재미있는 기능을 동작시킵니다.
+        Default: true.
+    ignore_patterns:
+        type: array
+        items:
+            type: string
+        description: Gemini Code Assist가 무시해야 할 파일 및 디렉터리의 glob 패턴 목록입니다. 이 목록에 있는 패턴과 일치하는 파일은 상호작용 중에 건너뛰게 됩니다.
+        Default: [].
+    code_review:
+        type: object
+        description: 제미나이 코드 리뷰를 위한 구성파일입니다.
+        properties:
+            disable:
+                type: boolean
+                description: 제미나이가 PR에 리뷰를 남기지 못하도록 설정합니다.
+                Default: false.
+            comment_severity_threshold:
+                type: string
+                enum:
+                    - LOW
+                    - MEDIUM
+                    - HIGH
+                    - CRITICAL
+                description: 각 리뷰의 심각도를 결정합니다.
+                Default: MEDIUM.
+            max_review_comments:
+                type: integer
+                format: int64
+                description: 최대 코멘트 갯수입니다. -1로 설정시 무제한 입니다.
+                Default: -1.
+            pull_request_opened:
+                type: object
+                description: PR이 열렸을 때 실행될 작업들 입니다.
+                properties:
+                    help:
+                        type: boolean
+                        description: PR이 열리면 제미나이 관련 도움말 코멘트를 남깁니다.
+                        Default: false.
+                    summary:
+                        type: boolean
+                        description: PR이 열리면 해당 PR의 요약을 남깁니다.
+                        Default: true.
+                    code_review:
+                        type: boolean
+                        description: PR이 열리면 코드리뷰를 진행합니다.
+                        Default: true.
