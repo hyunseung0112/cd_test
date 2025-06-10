@@ -1,0 +1,33 @@
+name: Release Tag
+run-name: Create Release Tag
+
+on:
+  issue_comment:
+    types: [ created, edited ]
+
+jobs:
+  build:
+    if: ${{ github.event.issue.pull_request && contains(github.event.comment.body, '/tag') }}
+    runs-on: ubuntu-latest
+
+    steps:
+      -   uses: actions/checkout@v4
+          with:
+            ref: ${{ github.event.pull_request.head.sha }}
+            fetch-depth: 0
+
+      -   name: Get Deploy Info
+          id: get_version_info
+          run: |
+            VERSION_CODE=$(grep 'VERSION_CODE=' gradle.properties | cut -d'=' -f2)
+            VERSION_NAME=$(grep 'VERSION_NAME=' gradle.properties | cut -d'=' -f2)
+            echo "VERSION_NAME=$VERSION_NAME" >> $GITHUB_ENV
+            echo "VERSION_CODE=$VERSION_CODE" >> $GITHUB_ENV
+      -   name: Create Release & Tag
+          uses: actions/create-release@v1
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          with:
+            tag_name: ${{ env.VERSION_NAME }}
+            release_name: fanmaum ${{ env.VERSION_NAME }} (${{ env.VERSION_CODE }})
+            body: ${{ github.event.head_commit.message }}
