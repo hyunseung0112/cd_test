@@ -1,0 +1,87 @@
+name: Dependency Guard
+run-name: Update dependencyGuard baseline
+
+on:
+    pull_request:
+        types: [ opened, synchronize, reopened ]
+        paths:
+            - '**/build.gradle.kts'
+            - 'settings.gradle.kts'
+            - 'gradle.properties'
+            - 'gradle/**'
+            - 'app/dependencies/**'
+
+# 같은 PR에서 연속 push 시 이전 실행은 취소
+concurrency:
+    group: dependency-guard-${{ github.event.pull_request.number }}
+    cancel-in-progress: true
+
+jobs:
+    update-baseline:
+        # fork PR은 GITHUB_TOKEN으로 push 불가 → 동일 저장소 PR만 처리
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        runs-on: ubuntu-latest
+        timeout-minutes: 30
+        permissions:
+            contents: write
+
+        steps:
+            -   name: Checkout PR head
+                uses: actions/checkout@v4
+                with:
+                    ref: ${{ github.event.pull_request.head.ref }}
+                    token: ${{ secrets.GITHUB_TOKEN }}
+
+            -   name: Set up JDK
+                uses: actions/setup-java@v4
+                with:
+                    distribution: 'zulu'
+                    java-version: 17
+
+            -   name: Set up Gradle
+                uses: gradle/actions/setup-gradle@v4
+
+            -   name: Set up Android SDK
+                uses: android-actions/setup-android@v4
+
+            -   name: Grant execute permission for gradlew
+                run: chmod +x gradlew
+
+            -   name: Regenerate dependencyGuard baseline
+                run: ./gradlew :app:dependencyGuardBaseline
+
+            -   name: Detect baseline changes
+                id: diff
+                run: |
+                    if git diff --quiet -- app/dependencies; then
+                        echo "changed=false" >> "$GITHUB_OUTPUT"
+                        echo "Baseline is up to date."
+                    else
+                        echo "changed=true" >> "$GITHUB_OUTPUT"
+                        echo "Baseline changed:"
+                        git --no-pager diff --stat -- app/dependencies
+                    fi
+
+            -   name: Commit & push baseline
+                if: steps.diff.outputs.changed == 'true'
+                run: |
+                    git config user.name "github-actions[bot]"
+                    git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+                    git add app/dependencies
+                    git commit -m "[Chore] :: dependencyGuard baseline 갱신"
+                    git push origin HEAD:${{ github.event.pull_request.head.ref }}
+
+            -   name: Write summary
+                if: always()
+                run: |
+                    {
+                        echo "## dependencyGuard baseline"
+                        if [ "${{ steps.diff.outputs.changed }}" = "true" ]; then
+                            echo "변경 사항을 커밋하여 PR 브랜치에 push 했습니다."
+                            echo '```'
+                            git --no-pager show --stat --oneline HEAD
+                            echo '```'
+                        else
+                            echo "변경 사항 없음."
+                        fi
+                    } >> "$GITHUB_STEP_SUMMARY"

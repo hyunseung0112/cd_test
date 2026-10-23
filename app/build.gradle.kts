@@ -1,6 +1,11 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.dropbox.dependency-guard") version "0.5.0"
+}
+
+dependencyGuard {
+    configuration("releaseRuntimeClasspath")
 }
 
 android {
